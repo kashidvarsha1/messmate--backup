@@ -33,7 +33,7 @@ const createTestData = async () => {
       password: hashedPassword,
       role: 'owner',
       userTrustScore: 70,
-      totalReports: 0,
+      totalReport: 0,
       reportsResolved: 0,
       totalReviews: 0,
       helpfulVotes: 0,
