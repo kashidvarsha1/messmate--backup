@@ -1,0 +1,344 @@
+﻿import { getProviderByPublicId, providerIdMap } from '../utils/providerApi';
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { FaStar, FaFlag, FaCamera, FaChartLine } from 'react-icons/fa';
+import axios from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+import Loader from '../components/common/Loader';
+import TrustBadge from '../components/common/TrustBadge';
+import HygieneScore from '../components/provider/HygieneScore';
+import VerificationBadge from '../components/provider/VerificationBadge';
+import ReviewCard from '../components/review/ReviewCard';
+import ReviewForm from '../components/review/ReviewForm';
+import ComplaintHistory from '../components/provider/ComplaintHistory';
+import ImageGallery from '../components/provider/ImageGallery';
+import HygieneProofUpload from '../components/provider/HygieneProofUpload';
+import ReportForm from '../components/report/ReportForm';
+import toast from 'react-hot-toast';
+
+const ProviderDetail = () => {
+  const { id } = useParams();
+  const { user, isAuthenticated, isOwner } = useAuth();
+  const [provider, setProvider] = useState(null);
+  const [insights, setInsights] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [media, setMedia] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [showReportForm, setShowReportForm] = useState(false);
+
+  useEffect(() => {
+    fetchProviderData();
+  }, [id]);
+
+  const fetchProviderData = async () => {
+    try {
+      setLoading(true);
+      const [providerRes, insightsRes, reviewsRes, mediaRes] = await Promise.all([
+        axios.get(`/providers/${id}`),
+        axios.get(`/providers/${id}/insights`).catch(() => ({ data: null })),
+        axios.get(`/reviews/provider/${id}`),
+        axios.get(`/media/provider/${id}`),
+      ]);
+      
+      setProvider(providerRes.data.data);
+      setInsights(insightsRes.data);
+      setReviews(reviewsRes.data.data || []);
+      setMedia(mediaRes.data.data || []);
+    } catch (error) {
+      console.error('Error fetching provider data:', error);
+      toast.error('Failed to load provider details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'open': return 'bg-green-100 text-green-800 border-green-200';
+      case 'closed': return 'bg-red-100 text-red-800 border-red-200';
+      case 'limited': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'open': return '🟢';
+      case 'closed': return '🔴';
+      case 'limited': return '🟡';
+      default: return '⚪';
+    }
+  };
+
+  if (loading) return <Loader />;
+  if (!provider) return <div className="text-center py-12">Provider not found</div>;
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-primary-600 to-primary-800 text-white rounded-2xl overflow-hidden mb-8">
+        <div className="px-6 py-8">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">{provider.name}</h1>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(provider.status)} bg-white`}>
+                  {getStatusIcon(provider.status)} {provider.status?.toUpperCase()}
+                </span>
+                <TrustBadge hygieneScore={provider.hygieneScore || 3.0} size="sm" />
+                <VerificationBadge badgeType={provider.verificationBadge} size="sm" />
+              </div>
+              <p className="text-primary-100 max-w-2xl">{provider.description}</p>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold">₹{provider.pricePerMeal}</div>
+              <div className="text-primary-200">per meal</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Hygiene Score Highlight */}
+      <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <FaStar className="text-yellow-500" /> Hygiene Score
+        </h2>
+        <HygieneScore score={provider.hygieneScore || 3.0} size="lg" />
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-4 border-b mb-6">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`pb-2 px-4 font-medium transition ${activeTab === 'overview' ? 'border-b-2 border-primary-600 text-primary-600' : 'text-gray-500'}`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab('reviews')}
+          className={`pb-2 px-4 font-medium transition ${activeTab === 'reviews' ? 'border-b-2 border-primary-600 text-primary-600' : 'text-gray-500'}`}
+        >
+          Reviews ({reviews.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('media')}
+          className={`pb-2 px-4 font-medium transition ${activeTab === 'media' ? 'border-b-2 border-primary-600 text-primary-600' : 'text-gray-500'}`}
+        >
+          Photos ({media.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('insights')}
+          className={`pb-2 px-4 font-medium transition ${activeTab === 'insights' ? 'border-b-2 border-primary-600 text-primary-600' : 'text-gray-500'}`}
+        >
+          Insights
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      <div className="space-y-6">
+        {activeTab === 'overview' && (
+          <>
+          {/* WhatsApp Button */}
+          { (
+            <a href={'https://wa.me/91' + provider.phone}
+              target='_blank' rel='noopener noreferrer'
+              className='flex items-center justify-center gap-3 w-full py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl transition-all shadow-sm mb-4'>
+              <span className='text-2xl'>📱</span>
+              <span>WhatsApp pe Contact Karo</span>
+            </a>
+          )}
+
+            <div className="bg-white rounded-2xl shadow-md p-6">
+              {provider.menu && provider.menu.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-md p-6">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">🍽️ Menu aur Prices</h3>
+                <div className="space-y-3">
+                  {[\"breakfast\",\"lunch\",\"dinner\",\"tiffin\",\"snacks\",\"drinks\",\"other\"].map(cat => {
+                    const items = provider.menu.filter(i => i.category === cat && i.isAvailable);
+                    if (!items.length) return null;
+                    return (
+                      <div key={cat}>
+                        <div className="text-xs font-bold uppercase text-gray-400 mb-2 capitalize">{cat}</div>
+                        {items.map((item, i) => (
+                          <div key={i} className="flex justify-between py-2 border-b border-gray-50">
+                            <span className="flex items-center gap-2">
+                              <span>{item.isVeg ? "🟢" : "🔴"}</span>
+                              <span className="text-gray-700 text-sm">{item.itemName}</span>
+                            </span>
+                            <span className="font-bold text-orange-500">₹{item.price}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            <h3 className="font-semibold mb-3">Location</h3>
+              <p>{provider.address?.street}, {provider.address?.city}, {provider.address?.state}</p>
+              <p className="text-gray-500 mt-1">Pincode: {provider.address?.pincode}</p>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-md p-6">
+              <h3 className="font-semibold mb-3">Meal Details</h3>
+              <div className="flex flex-wrap gap-2">
+                {provider.mealTypes?.map(type => (
+                  <span key={type} className="px-3 py-1 bg-gray-100 rounded-full text-sm">{type}</span>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {provider.cuisineType?.map(cuisine => (
+                  <span key={cuisine} className="px-3 py-1 bg-gray-100 rounded-full text-sm">{cuisine}</span>
+                ))}
+              </div>
+              <div className="mt-3">
+                <span className="text-sm">{provider.isVegetarian ? '🥬 Pure Vegetarian' : '🍗 Non-Vegetarian Available'}</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4">
+              {isAuthenticated && user?.role === 'customer' && (
+                <>
+                  <Link to={`/provider/${id}/review`} className="btn-primary px-6">
+                    Write a Review
+                  </Link>
+                  <button
+                    onClick={() => setShowReportForm(!showReportForm)}
+                    className="btn-secondary px-6 flex items-center gap-2"
+                  >
+                    <FaFlag /> Report Issue
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Report Form Modal */}
+            {showReportForm && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                <div className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                  <ReportForm providerId={id} onSuccess={() => setShowReportForm(false)} />
+                  <button
+                    onClick={() => setShowReportForm(false)}
+                    className="mt-4 w-full btn-secondary"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Complaint History */}
+            {/* Menu Display */}
+            {provider.menu && provider.menu.length > 0 && (
+              <div className='bg-white rounded-2xl p-6 border border-amber-100 shadow-sm'>
+                <h3 className='font-display font-bold text-lg mb-4'>🍽️ Menu aur Prices</h3>
+                <div className='space-y-2'>
+                  {['breakfast','lunch','dinner','tiffin','snacks','drinks','other'].map(cat => {
+                    const items = provider.menu.filter(i => i.category === cat && i.isAvailable);
+                    if (!items.length) return null;
+                    return (
+                      <div key={cat} className='mb-3'>
+                        <div className='text-xs font-bold uppercase tracking-wider text-gray-400 mb-2 capitalize'>{cat}</div>
+                        {items.map((item, i) => (
+                          <div key={i} className='flex items-center justify-between py-2 border-b border-gray-50'>
+                            <div className='flex items-center gap-2'>
+                              <span>{item.isVeg ? '🟢' : '🔴'}</span>
+                              <span className='text-gray-700 text-sm font-medium'>{item.itemName}</span>
+                            </div>
+                            <span className='font-display font-bold text-orange-500'>₹{item.price}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <ComplaintHistory providerId={id} />
+
+            {/* Real Images Gallery */}
+            <ImageGallery providerId={id} />
+
+            {/* Owner-only: Upload Hygiene Proof */}
+            {isAuthenticated && isOwner && (
+              <HygieneProofUpload providerId={id} onUpload={() => window.location.reload()} />
+            )}
+          </>
+        )}
+
+        {activeTab === 'reviews' && (
+          <div className="space-y-4">
+            {/* Review Form - Customer ke liye */}
+            {isAuthenticated && user?.role === 'customer' && (
+              <ReviewForm providerId={id} onSuccess={fetchProviderData} />
+            )}
+            
+            {/* Reviews List */}
+            {reviews.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>No reviews yet. Be the first to review!</p>
+              </div>
+            ) : (
+              reviews.map(review => <ReviewCard key={review._id} review={review} />)
+            )}
+          </div>
+        )}
+
+        {activeTab === 'media' && (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {media.length === 0 ? (
+              <div className="col-span-full text-center py-8 text-gray-500">
+                <p>No photos uploaded yet</p>
+              </div>
+            ) : (
+              media.map(item => (
+                <div key={item._id} className="relative group">
+                  <img src={item.url} alt={item.caption} className="w-full h-48 object-cover rounded-lg" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-2 rounded-b-lg">
+                    {item.type}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {activeTab === 'insights' && insights && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-2xl shadow-md p-6">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <FaChartLine /> Trust Metrics
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold">{insights.reviews?.total || 0}</div>
+                  <div className="text-gray-500">Total Reviews</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold">{insights.reports?.total || 0}</div>
+                  <div className="text-gray-500">Reports</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold">{insights.media?.verified || 0}</div>
+                  <div className="text-gray-500">Verified Photos</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold">{insights.reviews?.average || 0}/5</div>
+                  <div className="text-gray-500">Avg Rating</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ProviderDetail;
+
+
+
