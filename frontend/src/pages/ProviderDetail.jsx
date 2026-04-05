@@ -18,7 +18,6 @@ const ProviderDetail = () => {
   const [reviews, setReviews] = useState([]);
   const [media, setMedia] = useState([]);
   const [hygieneProofs, setHygieneProofs] = useState([]);
-  const [reports, setReports] = useState([]);
   const [complaintSummary, setComplaintSummary] = useState({ total: 0, verified: 0, underReview: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,7 +28,6 @@ const ProviderDetail = () => {
   useEffect(() => {
     if (id) {
       fetchHygieneProofs();
-      fetchReports();
     }
   }, [id]);
 
@@ -68,15 +66,6 @@ const ProviderDetail = () => {
       });
     } catch (error) {
       setComplaintSummary({ total: 0, verified: 0, underReview: 0 });
-    }
-  };
-
-  const fetchReports = async () => {
-    try {
-      const response = await axios.get('/reports/provider/' + id + '/public');
-      setReports(response.data.data || []);
-    } catch (error) {
-      setReports([]);
     }
   };
 
@@ -291,68 +280,6 @@ const ProviderDetail = () => {
               providerId={id}
               canManage={canViewComplaintManager}
             />
-
-            {/* Reports Section */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-display font-bold text-lg">🚨 Public Reports</h3>
-                <span className="text-sm bg-red-50 text-red-700 px-3 py-1 rounded-full border border-red-100">
-                  {reports.length} reports
-                </span>
-              </div>
-
-              {reports.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">✅ Koi public reports nahi</p>
-                  <p className="text-gray-400 text-sm mt-1">Yeh mess trustworthy hai</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {reports.map(report => (
-                    <div key={report._id} className="border rounded-xl p-3 border-red-100 bg-red-50">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h4 className="font-semibold text-gray-800 text-sm">{report.title}</h4>
-                          <p className="text-xs text-gray-600 mt-1">By: {report.userId?.name || 'Anonymous'}</p>
-                        </div>
-                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-800">
-                          ✅ {report.status}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 mb-2">{report.description}</p>
-                      <div className="flex gap-3 text-xs text-gray-600">
-                        <span>Category: <strong className="capitalize">{report.category.replace(/_/g, ' ')}</strong></span>
-                        <span>Severity: <strong className={
-                          report.severity === 'high' ? 'text-red-600' :
-                          report.severity === 'medium' ? 'text-yellow-600' :
-                          'text-green-600'
-                        }>{report.severity}</strong></span>
-                      </div>
-                      {report.evidence && report.evidence.length > 0 && (
-                        <div className="mt-2 flex gap-2">
-                          {report.evidence.map((img, idx) => (
-                            <a
-                              key={idx}
-                              href={img}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-block"
-                            >
-                              <img
-                                src={img}
-                                alt={`Report evidence ${idx + 1}`}
-                                className="h-12 w-12 rounded object-cover border border-red-100 hover:opacity-80 cursor-pointer"
-                              />
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
             <ImageGallery
               providerId={id}
               extraImages={hygieneProofs}
