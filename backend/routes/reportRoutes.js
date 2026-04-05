@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   createReport,
+  getMyReports,
   getProviderReports,
   getPublicProviderReports,
   getAllReports,
@@ -17,8 +18,9 @@ router.get('/provider/:providerId/public', getPublicProviderReports);
 // Protected routes
 router.use(protect);
 
-// User can create report
+// User can create report and see their own reports
 router.post('/', authorize('customer'), reportLimiter, createReport);
+router.get('/my', getMyReports);
 
 // Owner/Admin routes
 router.get('/provider/:providerId', authorize('owner', 'admin'), getProviderReports);

@@ -16,6 +16,24 @@ export const createMess = async (req, res) => {
     // Add owner ID from logged in user
     req.body.ownerId = req.user.id;
     
+    // Validate required fields
+    const { name, pricePerMeal, address, mealTypes } = req.body;
+    
+    if (!name || !pricePerMeal || !address || !mealTypes) {
+      return res.status(400).json({
+        success: false,
+        message: 'Required fields missing: name, pricePerMeal, address, mealTypes'
+      });
+    }
+    
+    // Validate coordinates
+    if (!address.coordinates || !address.coordinates.coordinates || address.coordinates.coordinates.length !== 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid coordinates. Must be [longitude, latitude]'
+      });
+    }
+    
     const provider = await Provider.create(req.body);
     
     // Send notification to admin (optional)
@@ -39,9 +57,29 @@ export const createMess = async (req, res) => {
       message: 'Provider created successfully'
     });
   } catch (error) {
+    console.error('Error creating provider:', error.message);
+    console.error('Error details:', error);
+    
+    // More specific error messages
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error: ' + messages.join(', ')
+      });
+    }
+    
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({
+        success: false,
+        message: `${field} already exists`
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Error creating provider'
+      message: error.message || 'Error creating provider'
     });
   }
 };
@@ -97,27 +135,32 @@ export const getProviders = async (req, res) => {
       if (maxPrice) query.pricePerMeal.$lte = Number(maxPrice);
     }
 
+    // Define sort options with fallback to _id for older documents
     const sortMap = {
-      newest: { createdAt: -1 },
-      rating: { averageRating: -1, createdAt: -1 },
-      price_asc: { pricePerMeal: 1, createdAt: -1 },
-      price_desc: { pricePerMeal: -1, createdAt: -1 },
-      hygiene: { hygieneScore: -1, createdAt: -1 }
+      newest: { createdAt: -1, _id: -1 },
+      rating: { averageRating: -1, createdAt: -1, _id: -1 },
+      price_asc: { pricePerMeal: 1, _id: -1 },
+      price_desc: { pricePerMeal: -1, _id: -1 },
+      hygiene: { hygieneScore: -1, createdAt: -1, _id: -1 }
     };
+
+    const sortOption = sortMap[sortBy] || sortMap.newest;
 
     const providers = await Provider.find(query)
       .populate('ownerId', 'name phone')
-      .sort(sortMap[sortBy] || sortMap.newest);
+      .sort(sortOption);
     
     res.status(200).json({
       success: true,
-      count: providers.length,
-      data: providers
+      data: providers,
+      count: providers.length
     });
   } catch (error) {
+    console.error('Error fetching providers:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Error fetching providers'
+      message: error.message || 'Error fetching providers',
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };

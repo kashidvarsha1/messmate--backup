@@ -16,6 +16,7 @@ const OwnerDashboard = () => {
   const [selectedTab, setSelectedTab] = useState('list');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [hygieneProofs, setHygieneProofs] = useState({});
+  const [reports, setReports] = useState({});
   const [createForm, setCreateForm] = useState({
     name: '', description: '', pricePerMeal: '', city: '',
     street: '', state: 'Maharashtra', pincode: '',
@@ -30,6 +31,14 @@ const OwnerDashboard = () => {
     if ((selectedTab === 'hygiene' || selectedTab === 'gallery') && providers.length > 0) {
       providers.forEach((provider) => {
         fetchHygieneProofs(provider._id);
+      });
+    }
+  }, [selectedTab, providers]);
+
+  useEffect(() => {
+    if (selectedTab === 'reports' && providers.length > 0) {
+      providers.forEach((provider) => {
+        fetchProvidersReports(provider._id);
       });
     }
   }, [selectedTab, providers]);
@@ -61,6 +70,18 @@ const OwnerDashboard = () => {
     }
   };
 
+  const fetchProvidersReports = async (providerId) => {
+    if (!providerId) return;
+    try {
+      const response = await axios.get(`/report/provider/${providerId}`);
+      const providerReports = response.data.data || [];
+      setReports(prev => ({ ...prev, [providerId]: providerReports }));
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+      setReports(prev => ({ ...prev, [providerId]: [] }));
+    }
+  };
+
   const handleProofUploaded = (providerId, proof) => {
     if (!providerId || !proof) {
       return;
@@ -87,8 +108,16 @@ const OwnerDashboard = () => {
 
   const handleCreateProvider = async (e) => {
     e.preventDefault();
-    if (!createForm.name || !createForm.pricePerMeal || !createForm.city) {
-      toast.error('Naam, price aur city zaroori hai');
+    if (!createForm.name || !createForm.pricePerMeal || !createForm.city || !createForm.street || !createForm.pincode) {
+      toast.error('Sab fields zaroori hain!');
+      return;
+    }
+    if (createForm.mealTypes.length === 0) {
+      toast.error('Kam se kam ek meal type select karo');
+      return;
+    }
+    if (createForm.cuisineType.length === 0) {
+      toast.error('Kam se kam ek cuisine type select karo');
       return;
     }
     try {
@@ -97,23 +126,24 @@ const OwnerDashboard = () => {
         providerType: 'mess',
         description: createForm.description,
         address: {
-          street: createForm.street || 'Not specified',
+          street: createForm.street,
           city: createForm.city,
           state: createForm.state,
           pincode: createForm.pincode,
           coordinates: { type: 'Point', coordinates: [73.8567, 18.5204] }
         },
         pricePerMeal: parseInt(createForm.pricePerMeal),
-        mealTypes: createForm.mealTypes.length > 0 ? createForm.mealTypes : ['lunch', 'dinner'],
-        cuisineType: createForm.cuisineType.length > 0 ? createForm.cuisineType : ['multi-cuisine'],
+        mealTypes: createForm.mealTypes,
+        cuisineType: createForm.cuisineType,
         isVegetarian: createForm.isVegetarian
       });
-      toast.success('Mess create ho gaya!');
+      toast.success('Mess create ho gaya! 🎉');
       setShowCreateForm(false);
       setCreateForm({ name: '', description: '', pricePerMeal: '', city: '', street: '', state: 'Maharashtra', pincode: '', mealTypes: [], cuisineType: [], isVegetarian: true });
       fetchMyProviders();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error creating mess');
+      console.error('Creation error:', error.response?.data);
     }
   };
 
@@ -173,6 +203,7 @@ const OwnerDashboard = () => {
             { key: 'menu', label: 'Menu', icon: '🍽️' },
             { key: 'hygiene', label: 'Hygiene Proof', icon: '📸' },
             { key: 'gallery', label: 'My Photos', icon: '🖼️' },
+            { key: 'reports', label: 'Complaints', icon: '🚨' },
           ].map(tab => (
             <button
               key={tab.key}
@@ -203,10 +234,114 @@ const OwnerDashboard = () => {
               <div className="bg-white rounded-3xl p-6 border border-amber-100">
                 <h3 className="font-bold text-xl mb-4">Naya Mess Register Karo</h3>
                 <form onSubmit={handleCreateProvider} className="space-y-3">
-                  <input type="text" placeholder="Mess Name" value={createForm.name} onChange={e => setCreateForm({...createForm, name: e.target.value})} className="w-full p-2 border rounded-lg" required />
-                  <input type="number" placeholder="Price per Meal" value={createForm.pricePerMeal} onChange={e => setCreateForm({...createForm, pricePerMeal: e.target.value})} className="w-full p-2 border rounded-lg" required />
-                  <input type="text" placeholder="City" value={createForm.city} onChange={e => setCreateForm({...createForm, city: e.target.value})} className="w-full p-2 border rounded-lg" required />
-                  <button type="submit" className="w-full bg-green-500 text-white py-2 rounded-lg">Create Mess</button>
+                  <input 
+                    type="text" 
+                    placeholder="Mess Name *" 
+                    value={createForm.name} 
+                    onChange={e => setCreateForm({...createForm, name: e.target.value})} 
+                    className="w-full p-2 border rounded-lg" 
+                    required 
+                  />
+                  <input 
+                    type="number" 
+                    placeholder="Price per Meal (₹) *" 
+                    value={createForm.pricePerMeal} 
+                    onChange={e => setCreateForm({...createForm, pricePerMeal: e.target.value})} 
+                    className="w-full p-2 border rounded-lg" 
+                    min="10"
+                    max="500"
+                    required 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="City *" 
+                    value={createForm.city} 
+                    onChange={e => setCreateForm({...createForm, city: e.target.value})} 
+                    className="w-full p-2 border rounded-lg" 
+                    required 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Street/Area *" 
+                    value={createForm.street} 
+                    onChange={e => setCreateForm({...createForm, street: e.target.value})} 
+                    className="w-full p-2 border rounded-lg" 
+                    required 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Pincode (6 digits) *" 
+                    value={createForm.pincode} 
+                    onChange={e => setCreateForm({...createForm, pincode: e.target.value})} 
+                    className="w-full p-2 border rounded-lg" 
+                    pattern="[0-9]{6}"
+                    required 
+                  />
+                  <select 
+                    value={createForm.state} 
+                    onChange={e => setCreateForm({...createForm, state: e.target.value})} 
+                    className="w-full p-2 border rounded-lg"
+                  >
+                    <option>Maharashtra</option>
+                    <option>Gujarat</option>
+                    <option>Karnataka</option>
+                    <option>Tamil Nadu</option>
+                    <option>Delhi</option>
+                    <option>Uttar Pradesh</option>
+                    <option>Rajasthan</option>
+                    <option>Other</option>
+                  </select>
+                  <textarea 
+                    placeholder="Description (optional)" 
+                    value={createForm.description} 
+                    onChange={e => setCreateForm({...createForm, description: e.target.value})} 
+                    className="w-full p-2 border rounded-lg" 
+                    rows="2"
+                  />
+                  <div>
+                    <label className="font-semibold text-sm">Meal Types:</label>
+                    <div className="flex gap-2 mt-2">
+                      {['breakfast', 'lunch', 'dinner', 'tiffin'].map(type => (
+                        <label key={type} className="flex items-center gap-2">
+                          <input 
+                            type="checkbox" 
+                            checked={createForm.mealTypes.includes(type)} 
+                            onChange={() => toggleMealType(type)}
+                          />
+                          <span className="capitalize">{type}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="font-semibold text-sm">Cuisine Types:</label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {['North Indian', 'South Indian', 'Chinese', 'Continental', 'Multi-cuisine'].map(type => (
+                        <label key={type} className="flex items-center gap-2">
+                          <input 
+                            type="checkbox" 
+                            checked={createForm.cuisineType.includes(type)} 
+                            onChange={() => toggleCuisineType(type)}
+                          />
+                          <span>{type}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2">
+                    <input 
+                      type="checkbox" 
+                      checked={createForm.isVegetarian} 
+                      onChange={e => setCreateForm({...createForm, isVegetarian: e.target.checked})}
+                    />
+                    <span>Pure Vegetarian</span>
+                  </label>
+                  <button 
+                    type="submit" 
+                    className="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600"
+                  >
+                    Create Mess
+                  </button>
                 </form>
               </div>
             )}
@@ -283,6 +418,105 @@ const OwnerDashboard = () => {
                 refreshKey={(hygieneProofs[provider._id] || []).length}
               />
             ))}
+          </div>
+        )}
+
+        {/* Reports Tab */}
+        {selectedTab === 'reports' && (
+          <div className="space-y-4">
+            {providers.map(provider => {
+              const providerReports = reports[provider._id] || [];
+              return (
+                <div key={provider._id} className="bg-white rounded-3xl p-6 border border-amber-100 shadow-sm">
+                  <h3 className="font-bold text-lg mb-4">{provider.name}</h3>
+                  
+                  {providerReports.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 text-lg">✅ Koi complaints nahi!</p>
+                      <p className="text-gray-400 text-sm mt-2">Aapke customers satisfied hain</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {providerReports.map(report => (
+                        <div key={report._id} className="border rounded-2xl p-4 border-amber-100 bg-amber-50">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h4 className="font-semibold text-gray-800">{report.title}</h4>
+                              <p className="text-sm text-gray-600">By: {report.userId?.name || 'Anonymous'}</p>
+                            </div>
+                            <div className="text-right">
+                              <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                                report.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                report.status === 'investigating' ? 'bg-blue-100 text-blue-800' :
+                                report.status === 'verified' ? 'bg-red-100 text-red-800' :
+                                report.status === 'dismissed' ? 'bg-gray-100 text-gray-800' :
+                                'bg-green-100 text-green-800'
+                              }`}>
+                                {report.status === 'pending' ? '⏳ Pending' :
+                                 report.status === 'investigating' ? '🔍 Investigating' :
+                                 report.status === 'verified' ? '✓ Verified' :
+                                 report.status === 'dismissed' ? '✗ Dismissed' :
+                                 '✔ Resolved'}
+                              </span>
+                              <p className="text-xs text-gray-500 mt-2">
+                                {new Date(report.createdAt).toLocaleDateString('hi-IN')}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <p className="text-sm text-gray-700 mb-2">{report.description}</p>
+                          
+                          <div className="flex gap-4 text-xs text-gray-600 mb-2">
+                            <span>Category: <strong>{report.category}</strong></span>
+                            <span>Severity: <strong className={
+                              report.severity === 'high' ? 'text-red-600' :
+                              report.severity === 'medium' ? 'text-yellow-600' :
+                              'text-green-600'
+                            }>{report.severity}</strong></span>
+                          </div>
+
+                          {report.evidence && report.evidence.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-amber-100">
+                              <p className="text-xs font-semibold text-gray-600 mb-2">📸 Evidence:</p>
+                              <div className="flex gap-2 flex-wrap">
+                                {report.evidence.map((img, idx) => (
+                                  <a
+                                    key={idx}
+                                    href={img}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-block"
+                                  >
+                                    <img
+                                      src={img}
+                                      alt={`Evidence ${idx + 1}`}
+                                      className="h-16 w-16 rounded-lg object-cover border border-amber-100 hover:opacity-80 cursor-pointer"
+                                    />
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {report.adminNote && (
+                            <div className="mt-3 pt-3 border-t border-amber-100 bg-blue-50 p-2 rounded-lg">
+                              <p className="text-xs font-semibold text-blue-700">Admin Note:</p>
+                              <p className="text-xs text-blue-600">{report.adminNote}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-100">
+                    <p className="text-xs text-gray-600">
+                      <strong>💡 Note:</strong> {providerReports.length} complaint{providerReports.length !== 1 ? 's' : ''} registered. Admin 24 ghante mein review karenge.
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

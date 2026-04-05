@@ -2,10 +2,13 @@
 import rateLimit from 'express-rate-limit';
 import logger from './logger.js';
 
-// General API rate limiter (100 requests per 15 minutes)
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+// General API rate limiter (100 requests per 15 minutes, or unlimited in development)
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: isDevelopment ? 10000 : 100, // Much higher limit in development
+  skip: (req, res) => isDevelopment, // Skip rate limiting in development
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.'

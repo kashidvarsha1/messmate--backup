@@ -47,6 +47,19 @@ export const createReport = catchAsync(async (req, res) => {
   });
 });
 
+// Get reports by current user (users can only see their own reports)
+export const getMyReports = catchAsync(async (req, res) => {
+  const reports = await Report.find({ userId: req.user.id })
+    .populate('providerId', 'name pricePerMeal status address')
+    .sort('-createdAt');
+
+  res.status(200).json({
+    success: true,
+    count: reports.length,
+    data: reports
+  });
+});
+
 // Get reports for a provider (admin only)
 export const getProviderReports = catchAsync(async (req, res) => {
   const { providerId } = req.params;

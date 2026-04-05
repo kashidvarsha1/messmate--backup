@@ -11,6 +11,7 @@ import Register from './pages/Register';
 import ProviderDetail from './pages/ProviderDetail';
 import AddReview from './pages/AddReview';
 import ReportIssue from './pages/ReportIssue';
+import MyReports from './pages/MyReports';
 import OwnerDashboard from './pages/OwnerDashboard';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
@@ -43,6 +44,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="customer">
                   <ReportIssue />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-reports"
+              element={
+                <ProtectedRoute requiredRole="customer">
+                  <MyReports />
                 </ProtectedRoute>
               }
             />
