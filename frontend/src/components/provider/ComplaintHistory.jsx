@@ -81,8 +81,8 @@ const ComplaintHistory = ({ providerId }) => {
       {complaints.length === 0 ? (
         <div className="text-center py-6">
           <FaShieldAlt className="text-green-500 text-4xl mx-auto mb-2" />
-          <p className="text-green-700 font-medium">No reviewed complaints visible yet.</p>
-          <p className="text-gray-500 text-sm mt-1">Reports appear here after admin moderation.</p>
+          <p className="text-green-700 font-medium">No complaints visible yet.</p>
+          <p className="text-gray-500 text-sm mt-1">Reports are directly approved and appear here immediately.</p>
         </div>
       ) : (
         <div className="space-y-3">
