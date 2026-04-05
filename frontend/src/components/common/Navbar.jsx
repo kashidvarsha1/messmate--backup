@@ -43,11 +43,6 @@ const Navbar = () => {
                   <Link to="/profile" className="text-gray-600 hover:text-orange-500 transition-colors">
                     👤 {user?.name?.split(' ')[0] || 'Profile'}
                   </Link>
-                  {user?.role === 'customer' && (
-                    <Link to="/my-reports" className="text-gray-600 hover:text-orange-500 transition-colors">
-                      🚨 Mere Reports
-                    </Link>
-                  )}
                   <button
                     onClick={() => setShowFeedback(true)}
                     className="text-gray-600 hover:text-orange-500 transition-colors px-3 py-2"
@@ -102,11 +97,6 @@ const Navbar = () => {
                     <Link to="/profile" className="text-gray-600 hover:text-orange-500 px-2 py-1">
                       👤 Profile
                     </Link>
-                    {user?.role === 'customer' && (
-                      <Link to="/my-reports" className="text-gray-600 hover:text-orange-500 px-2 py-1">
-                        🚨 Mere Reports
-                      </Link>
-                    )}
                     <button
                       onClick={() => setShowFeedback(true)}
                       className="text-left text-gray-600 hover:text-orange-500 px-2 py-1"

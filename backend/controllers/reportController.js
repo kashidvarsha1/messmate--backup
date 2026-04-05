@@ -179,9 +179,10 @@ export const getPublicProviderReports = catchAsync(async (req, res) => {
   };
 
   const reports = await Report.find(publicQuery)
-    .select('category severity status createdAt title evidence')
+    .populate('userId', 'name')
+    .select('category severity status createdAt title evidence userId')
     .sort('-createdAt')
-    .limit(10);
+    .limit(100);
 
   const total = await Report.countDocuments(publicQuery);
   const verified = await Report.countDocuments({
