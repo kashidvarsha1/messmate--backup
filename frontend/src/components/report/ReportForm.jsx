@@ -84,7 +84,7 @@ const ReportForm = ({ providerId, onSuccess }) => {
         evidence: imageUrl ? [{ url: imageUrl, type: 'image' }] : []
       });
       
-      toast.success('✅ Report submitted. After moderation it will appear publicly.');
+      toast.success('✅ Report submitted successfully and is now visible publicly!');
       setFormData({
         category: 'bad_hygiene',
         subCategory: '',

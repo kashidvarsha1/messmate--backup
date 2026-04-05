@@ -448,13 +448,13 @@ const OwnerDashboard = () => {
                               <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
                                 report.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                                 report.status === 'investigating' ? 'bg-blue-100 text-blue-800' :
-                                report.status === 'verified' ? 'bg-red-100 text-red-800' :
+                                report.status === 'verified' ? 'bg-green-100 text-green-800' :
                                 report.status === 'dismissed' ? 'bg-gray-100 text-gray-800' :
-                                'bg-green-100 text-green-800'
+                                'bg-purple-100 text-purple-800'
                               }`}>
                                 {report.status === 'pending' ? '⏳ Pending' :
                                  report.status === 'investigating' ? '🔍 Investigating' :
-                                 report.status === 'verified' ? '✓ Verified' :
+                                 report.status === 'verified' ? '✅ Verified' :
                                  report.status === 'dismissed' ? '✗ Dismissed' :
                                  '✔ Resolved'}
                               </span>
@@ -511,7 +511,7 @@ const OwnerDashboard = () => {
                   
                   <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-100">
                     <p className="text-xs text-gray-600">
-                      <strong>💡 Note:</strong> {providerReports.length} complaint{providerReports.length !== 1 ? 's' : ''} registered. Admin 24 ghante mein review karenge.
+                      <strong>💡 Note:</strong> {providerReports.length} complaint{providerReports.length !== 1 ? 's' : ''} registered. Sab auto-verify ho gaye. Admin 24 ghante mein action le sakta hai.
                     </p>
                   </div>
                 </div>

@@ -34,7 +34,9 @@ export const createReport = catchAsync(async (req, res) => {
     description,
     evidence: evidence || [],
     severity: severity || 'medium',
-    status: 'pending'
+    status: 'verified',
+    resolvedAt: new Date(),
+    resolvedBy: req.user.id
   });
 
   provider.totalComplaints = (provider.totalComplaints || 0) + 1;
@@ -43,7 +45,7 @@ export const createReport = catchAsync(async (req, res) => {
   res.status(201).json({
     success: true,
     data: report,
-    message: 'Report submitted successfully. Admin review ke baad visible hoga.'
+    message: 'Report submitted and verified successfully!'
   });
 });
 

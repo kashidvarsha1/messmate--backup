@@ -163,10 +163,9 @@ const MyReports = () => {
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mt-8">
           <h3 className="font-bold text-blue-900 mb-2">💡 Report Status Kya Matlab?</h3>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>⏳ <strong>Pending:</strong> Admin review me hai</li>
-            <li>🔍 <strong>Investigating:</strong> Admin check kar raha hai</li>
-            <li>✅ <strong>Verified:</strong> Report sahi hai aur public hai</li>
-            <li>❌ <strong>Dismissed:</strong> Report face ho gayer</li>
+            <li>✅ <strong>Verified:</strong> Report auto-approve ho gaya aur public hai</li>
+            <li>🔍 <strong>Investigating:</strong> Admin details check kar raha hai</li>
+            <li>❌ <strong>Dismissed:</strong> Report invalid samjha gaya</li>
             <li>✔️ <strong>Resolved:</strong> Issue fix ho gaya</li>
           </ul>
         </div>
